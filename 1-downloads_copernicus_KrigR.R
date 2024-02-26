@@ -2,8 +2,8 @@
 ## ERA5 downloads
 
 #starter<-function(){ 
-  API_User <<- "143020"
-  API_Key<<-"c818a65c-1997-4533-9173-58a64ba74079"
+  API_User <<- "...."
+  API_Key<<-"..."
   
   library(KrigR)
   install.load.package <- function(x) {
@@ -15,12 +15,12 @@
 mydownload<-function(fyear,lyear)
   
   # set a key to the keychain
-  wf_set_key(user = "143020",
-             key = "c818a65c-1997-4533-9173-58a64ba74079",
+  wf_set_key(user = "...",
+             key = "....",
              service = "cds")
   
 ## download an era5 or era land variable
-fyear <- 2018
+fyear <- 1950
 lyear <- 2022
   
 for(i in fyear:lyear){
