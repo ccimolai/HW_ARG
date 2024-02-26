@@ -8,19 +8,25 @@ var3<- read.csv("./Ext_varERA5_region/var_region_month/tmin_enso_int_max.csv")
 var4<- read.csv("./Ext_varERA5_region/var_region_month/tmin_enso_int_mean.csv")
 
 #******************************************************
-#*Calculate cold season
+#*Calculate cold season (CS)
 cal_cs <- function(data, variable) {
   yending <- data %>%
     select(-ENSO) %>%
     filter(month %in% c(4, 5, 6, 7, 8, 9)) %>% 
     group_by(year, area_geografica) %>%
-    summarize(mean_d = mean({{ variable }})) %>%
+    summarize(mean_d = mean({{variable}})) %>% #promedio regional anual
     group_by(area_geografica) %>%
-    do(broom::tidy(lm(mean_d ~ year, data = .))) %>%
-    filter(term == "year") %>%
-    select(area_geografica, estimate, p.value) 
- }
-
+    do(broom::tidy(zyp.zhang(.$mean_d, .$year)))
+  
+  trend_sig <- yending %>%
+    filter(names %in% c("trend", "sig")) %>%
+    pivot_wider(names_from = names, values_from = x) %>%
+    mutate(trend = trend * 10)
+  
+  colnames(trend_sig) <- c("area_geografica", "trend", "sig")
+  
+  return(trend_sig)
+}
 
 #Apply the function to different datasets and variables of interes
 d_cs <- cal_cs(var, duracion) %>%
@@ -33,7 +39,7 @@ imn_cs <- cal_cs(var4, int_media)%>%
   rename(cs_int_mn= estimate)
 
 #******************************************************
-#*calculate warm season
+#*calculate warm season (WS)
 cal_ws <- function(data, variable) {
   yending <- data %>%
     select(-ENSO) %>%
@@ -41,10 +47,17 @@ cal_ws <- function(data, variable) {
     group_by(year, area_geografica) %>%
     summarize(mean_d = mean({{ variable }})) %>%
     group_by(area_geografica) %>%
-    do(broom::tidy(lm(mean_d ~ year, data = .))) %>%
-    filter(term == "year") %>%
-    select(area_geografica, estimate, p.value) 
-
+    do(broom::tidy(zyp.zhang(.$mean_d, .$year)))
+  
+  trend_sig <- yending %>%
+    filter(names %in% c("trend", "sig")) %>%
+    pivot_wider(names_from = names, values_from = x) %>%
+    mutate(trend = trend * 10)
+  
+  # Renombrar las columnas
+  colnames(trend_sig) <- c("area_geografica", "trend", "sig")
+  
+  return(trend_sig)
 }
 
 #Apply the function to different datasets and variables of interes
@@ -58,3 +71,29 @@ imn_ws <- cal_ws(var4, int_media)%>%
   rename(ws_int_mn= estimate)%>%
   mutate(significant = ifelse(p.value <= 0.05, "si", "no"))
 
+# Complete period (Y)
+
+cal_y <- function(data, variable) {
+  yending <- data %>%
+    select(-ENSO) %>%
+    group_by(year, area_geografica) %>%
+    summarize(mean_d = mean({{ variable }})) %>%
+    group_by(area_geografica) %>%
+    do(broom::tidy(zyp.zhang(.$mean_d, .$year)))
+  
+  trend_sig <- yending %>%
+    filter(names %in% c("trend", "sig")) %>%
+    pivot_wider(names_from = names, values_from = x) %>%
+    mutate(trend = trend * 10)
+  
+  # Renombrar las columnas
+  colnames(trend_sig) <- c("area_geografica", "trend", "sig")
+  
+  return(trend_sig)
+}
+
+#Apply the function to different datasets and variables of interes
+d_y <- cal_y(var, duration) 
+e_y <- cal_y(var2, evento)
+imx_y <- cal_y(var3, int_maxima)
+imn_y <- cal_y(var4, int_media)
